@@ -246,6 +246,9 @@
   .rec-item .x { width: 30px; height: 30px; border-radius: 10px; border: 0; background: var(--deep); color: var(--danger); cursor: pointer; }
   .stack > * + * { margin-top: 8px; }
   .note-local { text-align: center; color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .made-by { display: block; width: fit-content; margin: 18px auto 0; padding: 7px 14px; border-radius: 999px; font-size: 12px; color: var(--muted); text-decoration: none;
+             background: color-mix(in srgb, var(--card) 70%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .made-by b { color: var(--accent); font-weight: 600; }
 
   /* ---------- форма додавання (нижня панель) ---------- */
   .sheet-bg { position: fixed; inset: 0; background: rgba(10, 8, 20, .55); display: flex; align-items: flex-end; justify-content: center; z-index: 10; opacity: 0; pointer-events: none; transition: opacity .2s; }
@@ -570,6 +573,7 @@
       </div>
     </div>
   </section>
+  <a class="made-by" id="madeBy" href="https://t.me/Montorkota" target="_blank" rel="noopener">Made by <b>@Montorkota</b></a>
 </main>
 
 <nav class="nav">
@@ -2864,6 +2868,9 @@ function renderProfile() {
    ===================================================================== */
 document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { tick(); selectedDay = b.dataset.go === 'history' ? selectedDay : null; go(b.dataset.go); }));
 $('fab').onclick = () => { tick(); openForm(null); };
+$('madeBy').onclick = e => {
+  if (tg && tg.openTelegramLink && useCloud) { e.preventDefault(); tg.openTelegramLink('https://t.me/Montorkota'); }
+};
 $('gearBtn').onclick = () => { tick(); go('settings'); };
 $('profBtn').onclick = () => { tick(); go('profile'); };
 $('backBtn').onclick = () => { tick(); onBack(); };
