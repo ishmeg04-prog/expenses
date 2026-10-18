@@ -292,7 +292,14 @@
   .add-person { display: flex; gap: 6px; margin-top: 8px; }
   .add-person input { background: var(--card); padding: 9px 12px; font-size: 13px; }
   .add-person button { flex: 0 0 auto; }
-  .share { font-size: 13px; font-weight: 600; margin-top: 4px; }
+  .share { font-size: 13px; font-weight: 600; margin-top: 8px; }
+  .share.bad { color: var(--danger); }
+  .share.good { color: var(--good); }
+  #splitMode { background: var(--card); box-shadow: none; }
+  .share-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .share-row span { flex: 1; font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .share-row .money-in { flex: 0 0 140px; }
+  .share-row input { background: var(--card); padding: 9px 40px 9px 12px; font-size: 14px; }
   .flash { animation: flash .9s ease; }
   @keyframes flash { 0% { box-shadow: var(--shadow-in), 0 0 0 3px var(--accent); } 100% { box-shadow: var(--shadow-in), 0 0 0 0 transparent; } }
 
@@ -554,12 +561,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <h2 data-i="exportT"></h2>
-      <div class="stack">
-        <button class="btn ghost" id="exportCsv" data-i="exportCsv" style="margin-top:0"></button>
-        <button class="btn ghost" id="exportCopy" data-i="exportCopy"></button>
-      </div>
     </div>
 
     <div class="card">
@@ -621,6 +622,9 @@
       <div class="add-person"><input id="personIn" data-ip="addPerson" maxlength="24"><button class="chip-btn" id="personAdd">+</button></div>
       <div class="lbl" style="margin-top:10px" data-i="paidBy"></div>
       <div class="wrap-chips" id="payerChips"></div>
+      <div class="lbl" style="margin-top:10px" data-i="splitHow"></div>
+      <div class="pills two" id="splitMode"></div>
+      <div id="shareInputs"></div>
       <div class="share" id="shareTxt"></div>
     </div>
     <button class="btn" id="saveBtn"></button>
@@ -663,13 +667,14 @@ const I18N = {
     budgetTotal: 'Загальний бюджет на місяць', budgetCats: 'Ліміти на окремі категорії ▾', budgetHint: 'Без обмеження',
     recurring: 'Регулярні платежі', recEmpty: 'Щоб додати регулярний платіж (оренда, підписка, зарплата), увімкни «🔁 Щомісяця» у формі додавання.', recDay: d => `щомісяця, ${d}-го числа`, recDelQ: 'Більше не додавати цей платіж автоматично? Уже додані записи залишаться.',
     reminders: 'Нагадування', remindHint: 'Щоденне нагадування записати витрати — у твоєму Google Календарі.', remindAdd: 'Додати в Google Календар', remindTitle: 'Записати витрати 💸', remindDetails: 'Відкрий «Мої витрати» в Telegram і запиши сьогоднішні витрати.',
-    exportT: 'Експорт', exportCsv: '⬇️ Завантажити CSV-файл', exportCopy: '📋 Скопіювати для Excel / Google Таблиць', copied: 'Скопійовано — встав у таблицю (Ctrl+V)', copyFail: 'Не вдалося скопіювати', exportEmpty: 'Немає записів для експорту',
-    csvHead: ['Дата', 'Тип', 'Категорія', 'Сума', 'Валюта', 'Моя частка', 'Коментар'], typeExp: 'Витрата', typeInc: 'Дохід',
     storeCloud: 'Дані зберігаються у твоєму акаунті Telegram', storeLocal: 'Відкрито поза Telegram — дані зберігаються лише в цьому браузері',
     saveErr: 'Не вдалося зберегти. Спробуй ще раз.', loadErr: 'Не вдалося завантажити дані. Перезапусти застосунок.',
     newRec: 'Новий запис', editRec: 'Редагувати', expense: 'Витрата', incomeOne: 'Дохід', note: 'Коментар', add: 'Додати', save: 'Зберегти', del: 'Видалити запис',
     delQ: (c, s) => `Видалити «${c}» на ${s}?`, monthly: '🔁 Щомісяця', split: '👥 Розділити',
-    paidBy: 'Хто заплатив', me: 'Я', withWhom: 'З ким ділимо (порівну)', addPerson: 'Ім’я друга', yourShare: x => `Твоя частка: ${x}`, needPeople: 'Додай хоча б одну людину, з якою ділиш витрату',
+    paidBy: 'Хто заплатив', me: 'Я', withWhom: 'З ким ділимо', addPerson: 'Ім’я друга', yourShare: x => `Твоя частка: ${x}`, needPeople: 'Додай хоча б одну людину, з якою ділиш витрату',
+    splitHow: 'Як ділимо', splitEqual: 'Порівну', splitCustom: 'Вручну', splitLeft: x => `Ще не розподілено: ${x}`,
+    splitOver: x => `Частки більші за суму на ${x}`, splitOk: '✓ Частки збігаються із сумою', splitMismatch: 'Частки мають разом дорівнювати сумі витрати',
+    splitEach: (n, x) => `${n}: ${x}`,
     added: 'Додано ✓', savedT: 'Збережено ✓', deleted: 'Видалено', badAmount: 'Введи суму',
     warn80: c => `⚠️ ${c}: використано понад 80% бюджету`, warnOver: c => `🚨 ${c}: бюджет перевищено`, totalBudget: 'Загальний бюджет',
     quickPh: 'Скажи або напиши: «кава 85 грн»', listening: 'Слухаю… скажи, наприклад, «таксі 120 гривень вчора»',
@@ -745,13 +750,14 @@ const I18N = {
     budgetTotal: 'Total monthly budget', budgetCats: 'Limits for categories ▾', budgetHint: 'No limit',
     recurring: 'Recurring payments', recEmpty: 'To add a recurring payment (rent, subscription, salary), turn on "🔁 Monthly" in the add form.', recDay: d => `monthly, on day ${d}`, recDelQ: 'Stop adding this payment automatically? Existing entries will stay.',
     reminders: 'Reminders', remindHint: 'A daily reminder to log your expenses — in your Google Calendar.', remindAdd: 'Add to Google Calendar', remindTitle: 'Log expenses 💸', remindDetails: 'Open "My expenses" in Telegram and log today\'s spending.',
-    exportT: 'Export', exportCsv: '⬇️ Download CSV file', exportCopy: '📋 Copy for Excel / Google Sheets', copied: 'Copied — paste it into a spreadsheet', copyFail: "Couldn't copy", exportEmpty: 'Nothing to export',
-    csvHead: ['Date', 'Type', 'Category', 'Amount', 'Currency', 'My share', 'Note'], typeExp: 'Expense', typeInc: 'Income',
     storeCloud: 'Your data is stored in your Telegram account', storeLocal: 'Opened outside Telegram — data is saved in this browser only',
     saveErr: "Couldn't save. Please try again.", loadErr: "Couldn't load your data. Please restart the app.",
     newRec: 'New entry', editRec: 'Edit entry', expense: 'Expense', incomeOne: 'Income', note: 'Note', add: 'Add', save: 'Save', del: 'Delete entry',
     delQ: (c, s) => `Delete "${c}" for ${s}?`, monthly: '🔁 Monthly', split: '👥 Split',
-    paidBy: 'Who paid', me: 'Me', withWhom: 'Split with (equally)', addPerson: "Friend's name", yourShare: x => `Your share: ${x}`, needPeople: 'Add at least one person to split with',
+    paidBy: 'Who paid', me: 'Me', withWhom: 'Split with', addPerson: "Friend's name", yourShare: x => `Your share: ${x}`, needPeople: 'Add at least one person to split with',
+    splitHow: 'How to split', splitEqual: 'Equally', splitCustom: 'Custom', splitLeft: x => `Not assigned yet: ${x}`,
+    splitOver: x => `Shares exceed the total by ${x}`, splitOk: '✓ Shares match the total', splitMismatch: 'Shares must add up to the total amount',
+    splitEach: (n, x) => `${n}: ${x}`,
     added: 'Added ✓', savedT: 'Saved ✓', deleted: 'Deleted', badAmount: 'Enter an amount',
     warn80: c => `⚠️ ${c}: over 80% of the budget used`, warnOver: c => `🚨 ${c}: budget exceeded`, totalBudget: 'Total budget',
     quickPh: 'Say or type: "coffee 5 dollars"', listening: 'Listening… say e.g. "taxi 12 dollars yesterday"',
@@ -1440,9 +1446,9 @@ function balances() {
   for (const e of items) {
     const cur = e.cur || 'UAH';
     if (e.sp) {
-      const share = e.my;
-      if (e.sp.by === 'me') e.sp.w.forEach(p => add(p, cur, share));
-      else add(e.sp.by, cur, -share);
+      const sh = e.sp.shares; // ручний розподіл: { me: …, ім'я: … }
+      if (e.sp.by === 'me') e.sp.w.forEach(p => add(p, cur, sh ? (sh[p] || 0) : e.my));
+      else add(e.sp.by, cur, -e.my);
     } else if (e.t === 'set') add(e.p, cur, -e.a);
   }
   for (const p of extra.people) bal[p] = bal[p] || {};
@@ -2142,52 +2148,18 @@ $('remindBtn').onclick = () => {
   openExternal(url);
 };
 
-function exportRows() {
-  return items.filter(isEntry).sort((a, b) => a.d.localeCompare(b.d)).map(e => [
-    e.d, isInc(e) ? T.typeInc : T.typeExp, catName(e.c), String(e.a).replace('.', T.locale === 'uk-UA' ? ',' : '.'),
-    e.cur || 'UAH', e.sp ? String(e.my).replace('.', T.locale === 'uk-UA' ? ',' : '.') : '', e.n || '',
-  ]);
-}
-$('exportCsv').onclick = () => {
-  const rows = exportRows();
-  if (!rows.length) { toast(T.exportEmpty); return; }
-  const cell = v => /[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-  const csv = [T.csvHead, ...rows].map(r => r.map(cell).join(';')).join('\r\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `expenses-${today()}.csv`;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-};
-$('exportCopy').onclick = async () => {
-  const rows = exportRows();
-  if (!rows.length) { toast(T.exportEmpty); return; }
-  const tsv = [T.csvHead, ...rows].map(r => r.map(v => v.replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
-  let ok = false;
-  try { await navigator.clipboard.writeText(tsv); ok = true; } catch {}
-  if (!ok) {
-    const ta = document.createElement('textarea');
-    ta.value = tsv; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    try { ok = document.execCommand('copy'); } catch {}
-    ta.remove();
-  }
-  toast(ok ? T.copied : T.copyFail);
-  if (ok) haptic('success');
-};
-
 /* =====================================================================
    Форма додавання / редагування
    ===================================================================== */
-let form = { editId: null, t: 'exp', cat: 'food', cur: 'UAH', monthly: false, split: false, by: 'me', w: [] };
+let form = { editId: null, t: 'exp', cat: 'food', cur: 'UAH', monthly: false, split: false, by: 'me', w: [], mode: 'eq', shares: {} };
 const sheetOpen = () => $('sheetBg').classList.contains('open');
 
 function openForm(e) {
   const editing = !!e;
   form = editing
-    ? { editId: e.id, t: isInc(e) ? 'inc' : 'exp', cat: e.c, cur: e.cur || 'UAH', monthly: false, split: !!e.sp, by: e.sp ? e.sp.by : 'me', w: e.sp ? [...e.sp.w] : [], acc: e.acc || '' }
-    : { editId: null, t: 'exp', cat: 'food', cur: cfg.input, monthly: false, split: false, by: 'me', w: [], acc: defaultAcc() };
+    ? { editId: e.id, t: isInc(e) ? 'inc' : 'exp', cat: e.c, cur: e.cur || 'UAH', monthly: false, split: !!e.sp, by: e.sp ? e.sp.by : 'me', w: e.sp ? [...e.sp.w] : [], acc: e.acc || '',
+        mode: e.sp && e.sp.shares ? 'custom' : 'eq', shares: e.sp && e.sp.shares ? { ...e.sp.shares } : {} }
+    : { editId: null, t: 'exp', cat: 'food', cur: cfg.input, monthly: false, split: false, by: 'me', w: [], acc: defaultAcc(), mode: 'eq', shares: {} };
   $('amount').value = editing ? String(e.a).replace('.', T.locale === 'uk-UA' ? ',' : '.') : '';
   $('note').value = editing ? (e.n || '') : '';
   $('date').value = editing ? e.d : (selectedDay || today());
@@ -2278,6 +2250,7 @@ function renderSplit() {
     b.onclick = () => {
       tick();
       form.w = form.w.includes(p) ? form.w.filter(x => x !== p) : [...form.w, p];
+      if (!form.w.includes(p)) delete form.shares[p];
       if (!form.w.includes(form.by)) form.by = 'me';
       renderSplit();
     };
@@ -2293,7 +2266,54 @@ function renderSplit() {
     pay.appendChild(b);
   }
   const a = parseAmount($('amount').value);
-  $('shareTxt').textContent = a > 0 && form.w.length ? T.yourShare(money(a / (form.w.length + 1), form.cur)) : '';
+  // порівну / вручну
+  const sm = $('splitMode');
+  sm.innerHTML = '';
+  for (const [id, key] of [['eq', 'splitEqual'], ['custom', 'splitCustom']]) {
+    const b = document.createElement('button');
+    b.textContent = T[key];
+    if (id === form.mode) b.className = 'on';
+    b.onclick = () => {
+      tick();
+      if (id === 'custom' && form.mode !== 'custom') {
+        // стартуємо з рівних часток — далі можна підправити
+        const parts = ['me', ...form.w], each = a > 0 ? round2(a / parts.length) : 0;
+        form.shares = Object.fromEntries(parts.map(p => [p, each]));
+        if (a > 0) form.shares.me = round2(a - each * form.w.length);
+      }
+      form.mode = id;
+      renderSplit();
+    };
+    sm.appendChild(b);
+  }
+  const si = $('shareInputs');
+  const st = $('shareTxt');
+  st.className = 'share';
+  if (form.mode !== 'custom' || !form.w.length) {
+    si.innerHTML = '';
+    st.textContent = a > 0 && form.w.length ? T.yourShare(money(a / (form.w.length + 1), form.cur)) : '';
+    return;
+  }
+  // поля для кожного учасника; при наборі оновлюємо лише підсумок, щоб не збивати курсор
+  const parts = ['me', ...form.w];
+  const fmtIn = v => v ? String(v).replace('.', T.locale === 'uk-UA' ? ',' : '.') : '';
+  si.innerHTML = parts.map(p => `<div class="share-row"><span>${esc(p === 'me' ? T.me : p)}</span>
+    <div class="money-in"><input type="text" inputmode="decimal" data-p="${esc(p)}" value="${fmtIn(form.shares[p])}" placeholder="${T.zero}"><span>${SYM[form.cur]}</span></div></div>`).join('');
+  si.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+    const v = parseAmount(inp.value);
+    form.shares[inp.dataset.p] = v > 0 ? v : 0;
+    updateShareSum();
+  }));
+  updateShareSum();
+}
+function shareSum() { return round2(['me', ...form.w].reduce((s, p) => s + (form.shares[p] || 0), 0)); }
+function updateShareSum() {
+  const a = parseAmount($('amount').value);
+  const st = $('shareTxt');
+  if (!(a > 0)) { st.textContent = ''; return; }
+  const diff = round2(a - shareSum());
+  st.className = 'share ' + (Math.abs(diff) < 0.01 ? 'good' : 'bad');
+  st.textContent = Math.abs(diff) < 0.01 ? T.splitOk : diff > 0 ? T.splitLeft(money(diff, form.cur)) : T.splitOver(money(-diff, form.cur));
 }
 function addPerson() {
   const name = $('personIn').value.trim().replace(/\s+/g, ' ');
@@ -2305,7 +2325,7 @@ function addPerson() {
 }
 $('personAdd').onclick = addPerson;
 $('personIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addPerson(); } });
-$('amount').addEventListener('input', renderSplit);
+$('amount').addEventListener('input', () => { if (form.split && form.mode === 'custom') updateShareSum(); else renderSplit(); });
 $('curTag').onclick = () => {
   tick();
   const i = CURS.findIndex(c => c.id === form.cur);
@@ -2339,6 +2359,7 @@ function saveForm() {
   const a = parseAmount($('amount').value);
   if (!(a > 0)) { haptic('error'); toast(T.badAmount); $('amount').focus(); return; }
   if (form.split && form.t === 'exp' && !form.w.length) { haptic('error'); toast(T.needPeople); return; }
+  if (form.split && form.t === 'exp' && form.mode === 'custom' && Math.abs(shareSum() - a) >= 0.01) { haptic('error'); toast(T.splitMismatch); return; }
   const d = $('date').value || today();
   const old = form.editId ? items.find(x => x.id === form.editId) : null;
   const e = { id: form.editId || uid(), a, cur: form.cur, c: form.cat, n: $('note').value.trim(), d };
@@ -2346,7 +2367,13 @@ function saveForm() {
   if (form.acc) { e.acc = form.acc; cfg.lastAcc = form.acc; saveCfg(); }
   if (old && old.r) e.r = old.r;
   if (old && old.mono) e.mono = old.mono;
-  if (form.split && form.t === 'exp') { e.sp = { by: form.by, w: [...form.w] }; e.my = round2(a / (form.w.length + 1)); }
+  if (form.split && form.t === 'exp') {
+    e.sp = { by: form.by, w: [...form.w] };
+    if (form.mode === 'custom') {
+      e.sp.shares = Object.fromEntries(['me', ...form.w].map(p => [p, round2(form.shares[p] || 0)]));
+      e.my = e.sp.shares.me;
+    } else e.my = round2(a / (form.w.length + 1));
+  }
 
   const before = budgetState(d.slice(0, 7));
   if (old) items[items.indexOf(old)] = e;
